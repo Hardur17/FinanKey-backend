@@ -8,29 +8,42 @@ const register = (req, res) => {
         return res.status(400).json({ error: 'Faltan campos' });
     }
 
-    bcrypt.hash(contrasena, 10, (err, hash) => {
+    // Verificar si el correo ya existe
+    db.query('SELECT * FROM usuarios WHERE correo = ?', [correo], (err, results) => {
         if (err) return res.status(500).json({ error: 'Error en el servidor' });
+        if (results.length > 0) {
+            return res.status(409).json({ error: 'Correo ya registrado' });
+        }
 
-        db.query(
-            'INSERT INTO usuarios (nombre, correo, contrasena) VALUES (?, ?, ?)',
-            [nombre, correo, hash],
-            (error) => {
-                if (error) {
-                    console.log(" Error al registrar:", error);  
-                    return res.status(500).json({ error: 'Error al registrar' });
+        // Hashear y registrar nuevo usuario
+        bcrypt.hash(contrasena, 10, (err, hash) => {
+            if (err) return res.status(500).json({ error: 'Error en el servidor' });
+
+            db.query(
+                'INSERT INTO usuarios (nombre, correo, contrasena) VALUES (?, ?, ?)',
+                [nombre, correo, hash],
+                (error) => {
+                    if (error) {
+                        console.error("❌ Error al registrar:", error);
+                        return res.status(500).json({ error: 'Error al registrar' });
+                    }
+
+                    res.status(201).json({ mensaje: 'Usuario registrado' });
                 }
-
-                res.status(201).json({ mensaje: 'Usuario registrado' });
-            }
-        );
+            );
+        });
     });
 };
 
 const login = (req, res) => {
     const { correo, contrasena } = req.body;
+    if (!correo || !contrasena) {
+        return res.status(400).json({ error: 'Faltan campos' });
+    }
 
     db.query('SELECT * FROM usuarios WHERE correo = ?', [correo], (error, results) => {
-        if (error || results.length === 0) {
+        if (error) return res.status(500).json({ error: 'Error en el servidor' });
+        if (results.length === 0) {
             return res.status(401).json({ error: 'Usuario no encontrado' });
         }
 
@@ -40,9 +53,15 @@ const login = (req, res) => {
                 return res.status(401).json({ error: 'Contraseña incorrecta' });
             }
 
+            // Verificar que process.env.JWT_SECRET está definido
+            const secret = process.env.JWT_SECRET;
+            if (!secret) {
+                return res.status(500).json({ error: 'Error interno: JWT_SECRET no configurado' });
+            }
+
             const token = jwt.sign(
                 { id: usuario.id, correo: usuario.correo },
-                process.env.JWT_SECRET,
+                secret,
                 { expiresIn: '1h' }
             );
 
