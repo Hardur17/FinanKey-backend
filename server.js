@@ -7,10 +7,11 @@ dotenv.config();
 const rutas = require('./src/auth/rutas');
 
 const corsOptions = {
-  origin: ['http://localhost:3000', 'https://edwinahhh.github.io/FinanKey/'], 
+  origin: ['http://localhost:3000', 'https://edwinahhh.github.io'],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
 };
+
 app.use(cors(corsOptions));
 
 app.use(express.json());
