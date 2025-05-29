@@ -7,7 +7,7 @@ dotenv.config();
 const rutas = require('./src/auth/rutas');
 
 const corsOptions = {
-  origin: ['http://localhost:3000', 'https://tufrontend.onrender.com'], 
+  origin: ['http://localhost:3000', 'https://edwinahhh.github.io/FinanKey/'], 
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
 };
